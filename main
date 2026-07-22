@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Angler's Bounty - MoMo Mini Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            height: 680px;
+            background: linear-gradient(180deg, #87CEEB 0%, #1e3c72 40%, #2a5298 100%);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Top Bar UI */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+        .stat-badge {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .momo-pink { color: #d82d8b; }
+        .gold { color: #ffd700; }
+
+        /* Canvas Area */
+        canvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        /* Controls Overlay */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            z-index: 10;
+        }
+        .btn-action {
+            background: linear-gradient(135deg, #a50064, #d82d8b);
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 30px;
+            box-shadow: 0 6px 20px rgba(216, 45, 139, 0.4);
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .btn-action:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal Result */
+        .modal {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+        }
+        .modal h2 { font-size: 28px; margin-bottom: 10px; }
+        .modal p { font-size: 16px; color: #ccc; margin-bottom: 20px; }
+        .modal .reward { font-size: 22px; color: #ffd700; font-weight: bold; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- UI Top Bar -->
+    <div class="top-bar">
+        <div class="stat-badge">🪱 Mồi câu: <span id="bait-count" class="momo-pink">5</span></div>
+        <div class="stat-badge">🪙 Xu MoMo: <span id="coin-count" class="gold">0</span></div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas" width="420" height="600"></canvas>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button id="actionBtn" class="btn-action">THẢ CÂU</button>
+    </div>
+
+    <!-- Modal kết quả -->
+    <div id="resultModal" class="modal">
+        <h2 id="modalTitle">THÀNH CÔNG!</h2>
+        <p id="modalDesc">Bạn đã bắt được cá!</p>
+        <div id="modalReward" class="reward">+100 Xu</div>
+        <button id="modalBtn" class="btn-action">CÂU TIẾP</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const actionBtn = document.getElementById('actionBtn');
+    const baitEl = document.getElementById('bait-count');
+    const coinEl = document.getElementById('coin-count');
+
+    // State Game
+    const STATES = { IDLE: 0, TIMING: 1, REELING: 2, RESULT: 3 };
+    let currentState = STATES.IDLE;
+
+    let baits = 5;
+    let coins = 0;
+
+    // Phase 1: Timing Bar State
+    let timingPos = 0;
+    let timingSpeed = 4;
+    let timingDirection = 1;
+
+    // Phase 2: Reeling Mechanics State
+    let fishY = 300;
+    let fishTargetY = 300;
+    let barY = 300;
+    const barHeight = 90;
+    let progress = 30; // 0 - 100%
+    let isPressing = false;
+    let currentFish = null;
+
+    // Danh sách cá theo GDD
+    const FISH_TYPES = [
+        { name: "Cá Rô Cụ", rarity: "Thường", color: "#4CAF50", reward: 20, speed: 2, chance: 0.6 },
+        { name: "Cá Chép Vàng", rarity: "Hiếm", color: "#2196F3", reward: 100, speed: 4, chance: 0.85 },
+        { name: "Cá Hồi Đỏ", rarity: "Sử thi", color: "#9C27B0", reward: 300, speed: 6, chance: 0.98 },
+        { name: "Rồng Biển MoMo", rarity: "Huyền thoại", color: "#FF9800", reward: 1000, speed: 9, chance: 1.0 }
+    ];
+
+    // Xử lý sự kiện bấm nút
+    function handlePressStart() {
+        if (currentState === STATES.IDLE) {
+            if (baits <= 0) {
+                alert("Bạn đã hết mồi! Hãy làm thêm nhiệm vụ trên MoMo.");
+                return;
+            }
+            baits--;
+            baitEl.textContent = baits;
+            currentState = STATES.TIMING;
+            actionBtn.textContent = "GIẬT CẦU!";
+        } else if (currentState === STATES.TIMING) {
+            // Tính điểm Perfect dựa vào khoảng cách tới tâm
+            const center = canvas.width / 2;
+            const accuracy = Math.abs(timingPos - center);
+            let luckBonus = accuracy < 30 ? 0.2 : 0; // Thả chuẩn tăng cơ hội cá hiếm
+
+            startReelingPhase(luckBonus);
+            actionBtn.textContent = "GIỮ ĐỂ KÉO";
+        } else if (currentState === STATES.REELING) {
+            isPressing = true;
+        }
+    }
+
+    function handlePressEnd() {
+        if (currentState === STATES.REELING) {
+            isPressing = false;
+        }
+    }
+
+    // Đăng ký event cho cả chuột & cảm ứng di động
+    actionBtn.addEventListener('mousedown', handlePressStart);
+    actionBtn.addEventListener('mouseup', handlePressEnd);
+    actionBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handlePressStart(); });
+    actionBtn.addEventListener('touchend', (e) => { e.preventDefault(); handlePressEnd(); });
+
+    function startReelingPhase(luckBonus) {
+        currentState = STATES.REELING;
+        progress = 30;
+        barY = 300;
+        fishY = 300;
+
+        // Chọn cá ngẫu nhiên theo tỷ lệ
+        const rand = Math.random() - luckBonus;
+        currentFish = FISH_TYPES.find(f => rand <= f.chance) || FISH_TYPES[0];
+    }
+
+    // Vòng lặp cập nhật Game (Update Loop)
+    function update() {
+        if (currentState === STATES.TIMING) {
+            timingPos += timingSpeed * timingDirection;
+            if (timingPos >= canvas.width - 40 || timingPos <= 40) {
+                timingDirection *= -1;
+            }
+        } 
+        else if (currentState === STATES.REELING) {
+            // Thanh bắt cá di chuyển theo thao tác người dùng
+            if (isPressing) barY -= 4.5;
+            else barY += 3.5;
+            
+            // Giới hạn thanh bắt cá trong khung nước
+            barY = Math.max(120, Math.min(500, barY));
+
+            // Con cá di chuyển AI ngẫu nhiên
+            if (Math.random() < 0.03) {
+                fishTargetY = 120 + Math.random() * 380;
+            }
+            fishY += (fishTargetY - fishY) * (currentFish.speed * 0.015);
+
+            // Kiểm tra con cá có nằm trong vùng xanh không
+            const inRange = fishY >= (barY - barHeight / 2) && fishY <= (barY + barHeight / 2);
+
+            if (inRange) {
+                progress += 0.25; // Tăng tiến trình
+            } else {
+                progress -= 0.35; // Giảm tiến trình (tuột cá)
+            }
+
+            // Kiểm tra điều kiện Thắng / Thua
+            if (progress >= 100) {
+                endGame(true);
+            } else if (progress <= 0) {
+                endGame(false);
+            }
+        }
+    }
+
+    // Vẽ giao diện Game (Render Loop)
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Vẽ Mặt nước & Bờ biển
+        ctx.fillStyle = "#87CEEB";
+        ctx.fillRect(0, 0, canvas.width, 100); // Bầu trời
+        ctx.fillStyle = "#1e3c72";
+        ctx.fillRect(0, 100, canvas.width, canvas.height - 100); // Đáy biển
+
+        if (currentState === STATES.TIMING) {
+            // Vẽ Thanh Timing Bar
+            const barW = canvas.width - 80;
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.fillRect(40, 50, barW, 20);
+
+            // Vùng Perfect xanh lá
+            ctx.fillStyle = "#4CAF50";
+            ctx.fillRect(canvas.width / 2 - 25, 50, 50, 20);
+
+            // Con lắc chỉ vị trí
+            ctx.fillStyle = "#FFF";
+            ctx.fillRect(timingPos - 3, 45, 6, 30);
+        }
+
+        if (currentState === STATES.REELING) {
+            // 1. Vẽ Cột Tiến Trình Catching (Bên Trái)
+            ctx.fillStyle = "rgba(0,0,0,0.4)";
+            ctx.fillRect(20, 120, 16, 380);
+            
+            ctx.fillStyle = progress > 50 ? "#4CAF50" : "#FF9800";
+            const currentProgHeight = (progress / 100) * 380;
+            ctx.fillRect(20, 500 - currentProgHeight, 16, currentProgHeight);
+
+            // 2. Vẽ Thanh Lực Căng (Tension Bar)
+            const rightX = canvas.width - 50;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+            ctx.fillRect(rightX, 120, 30, 380);
+
+            // Vùng xanh an toàn (Catch Indicator)
+            ctx.fillStyle = "rgba(76, 175, 80, 0.6)";
+            ctx.strokeStyle = "#4CAF50";
+            ctx.lineWidth = 2;
+            ctx.fillRect(rightX, barY - barHeight / 2, 30, barHeight);
+            ctx.strokeRect(rightX, barY - barHeight / 2, 30, barHeight);
+
+            // 3. Vẽ Con Cá
+            ctx.fillStyle = currentFish.color;
+            ctx.beginPath();
+            ctx.arc(rightX + 15, fishY, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hiển thị tên & phẩm cấp cá
+            ctx.fillStyle = "#FFF";
+            ctx.font = "bold 16px sans-serif";
+            ctx.fillText(`${currentFish.name} (${currentFish.rarity})`, 60, 140);
+        }
+    }
+
+    function endGame(isSuccess) {
+        currentState = STATES.RESULT;
+        const modal = document.getElementById('resultModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDesc = document.getElementById('modalDesc');
+        const modalReward = document.getElementById('modalReward');
+
+        modal.style.display = 'flex';
+
+        if (isSuccess) {
+            coins += currentFish.reward;
+            coinEl.textContent = coins;
+            modalTitle.textContent = "THÀNH CÔNG!";
+            modalTitle.style.color = "#4CAF50";
+            modalDesc.textContent = `Bạn đã thu phục thành công ${currentFish.name}!`;
+            modalReward.textContent = `+${currentFish.reward} Xu MoMo`;
+        } else {
+            modalTitle.textContent = "ĐỨT DÂY CÂU!";
+            modalTitle.style.color = "#F44336";
+            modalDesc.textContent = "Con cá đã nhanh chân trốn mất!";
+            modalReward.textContent = "+0 Xu";
+        }
+    }
+
+    // Reset game từ Modal
+    document.getElementById('modalBtn').addEventListener('click', () => {
+        document.getElementById('resultModal').style.display = 'none';
+        currentState = STATES.IDLE;
+        actionBtn.textContent = "THẢ CÂU";
+        timingPos = 40;
+    });
+
+    // Game Loop
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    loop();
+</script>
+</body>
+</html>
