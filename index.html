@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Angler's Bounty - Core Loop Demo</title>
+    <title>Angler's Bounty - Visual & Gameplay Enhanced</title>
     <style>
         * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; }
         body {
-            background-color: #0d1117;
+            background-color: #0b0e14;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
@@ -20,16 +20,16 @@
             position: relative;
             width: 100%;
             max-width: 420px;
-            height: 700px;
-            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 50%, #0f2027 100%);
+            height: 720px;
+            background: #111;
             border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
-        
-        /* Flash Screen effect */
+
+        /* Flash Overlay */
         #flash-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -42,124 +42,101 @@
 
         /* Top HUD */
         .top-hud {
+            position: absolute;
+            top: 0; left: 0; right: 0;
             display: flex;
             justify-content: space-between;
-            padding: 16px;
-            z-index: 10;
-            background: rgba(0,0,0,0.3);
+            align-items: center;
+            padding: 12px 16px;
+            z-index: 20;
+            background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
         }
         .hud-badge {
             background: rgba(255,255,255,0.15);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            backdrop-filter: blur(4px);
+        }
+        .shop-btn {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            border: none;
             padding: 6px 14px;
             border-radius: 20px;
-            font-size: 14px;
             font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255,152,0,0.4);
         }
 
         /* Main Canvas */
         canvas { width: 100%; height: 100%; touch-action: none; }
 
-        /* HUD Reeling Mini-Game overlay */
+        /* HUD Reeling overlay */
         #reeling-ui {
             position: absolute;
-            top: 80px;
-            left: 20px;
-            right: 20px;
+            top: 60px; left: 16px; right: 16px;
             display: none;
             flex-direction: column;
-            gap: 12px;
-            z-index: 10;
-            background: rgba(0,0,0,0.5);
-            padding: 15px;
+            gap: 8px;
+            z-index: 15;
+            background: rgba(0,0,0,0.6);
+            padding: 12px;
             border-radius: 12px;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
         }
-        .metric-row {
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        /* Progress bars */
+        .metric-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; }
         .bar-container {
-            width: 100%;
-            height: 16px;
-            background: #333;
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
+            width: 100%; height: 12px; background: #222; border-radius: 6px; overflow: hidden; position: relative;
         }
-        .bar-fill { height: 100%; width: 0%; transition: width 0.1s linear; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.05s linear; }
         #tension-bar { background: linear-gradient(90deg, #4CAF50, #FFEB3B, #F44336); }
         #distance-bar { background: #2196F3; }
 
-        /* QTE Jerk/Stun Button */
+        /* QTE Jerk Button */
         #qte-btn {
             position: absolute;
-            top: 45%;
-            left: 50%;
+            top: 40%; left: 50%;
             transform: translate(-50%, -50%) scale(0);
-            background: #FF9800;
-            color: #000;
-            border: 4px solid #FFF;
-            padding: 18px 32px;
-            font-size: 22px;
-            font-weight: 900;
-            border-radius: 50px;
-            box-shadow: 0 0 25px #FF9800;
-            cursor: pointer;
-            z-index: 30;
+            background: #FF9800; color: #000;
+            border: 3px solid #FFF; padding: 14px 28px;
+            font-size: 20px; font-weight: 900; border-radius: 40px;
+            box-shadow: 0 0 20px #FF9800; cursor: pointer; z-index: 30;
             transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            animation: pulse 0.6s infinite alternate;
-        }
-        @keyframes pulse {
-            from { transform: translate(-50%, -50%) scale(1); }
-            to { transform: translate(-50%, -50%) scale(1.15); }
         }
 
         /* Controls Bottom */
         .controls {
             position: absolute;
-            bottom: 24px;
-            left: 0; right: 0;
-            display: flex;
-            justify-content: center;
-            z-index: 10;
+            bottom: 20px; left: 0; right: 0;
+            display: flex; justify-content: center; z-index: 20;
         }
         .btn-main {
             background: linear-gradient(135deg, #d82d8b, #a50064);
-            color: white;
-            border: none;
-            padding: 18px 60px;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 35px;
-            box-shadow: 0 8px 25px rgba(216, 45, 139, 0.5);
-            cursor: pointer;
+            color: white; border: none; padding: 16px 50px;
+            font-size: 18px; font-weight: bold; border-radius: 30px;
+            box-shadow: 0 6px 20px rgba(216, 45, 139, 0.5); cursor: pointer;
         }
         .btn-main:active { transform: scale(0.95); }
 
-        /* Modal screens */
+        /* Modals (Result & Shop) */
         .modal {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 40;
-            text-align: center;
-            padding: 24px;
+            background: rgba(0,0,0,0.85); display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 40; text-align: center; padding: 20px;
         }
         .fish-card {
-            background: rgba(255,255,255,0.1);
-            border: 2px solid #ffd700;
-            border-radius: 16px;
-            padding: 20px;
-            margin: 20px 0;
-            width: 80%;
+            background: rgba(255,255,255,0.08); border: 2px solid #ffd700;
+            border-radius: 16px; padding: 16px; margin: 16px 0; width: 85%;
+        }
+        .shop-item {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; background: rgba(255,255,255,0.1); padding: 12px;
+            border-radius: 10px; margin-bottom: 10px;
         }
     </style>
 </head>
@@ -170,50 +147,65 @@
 
     <!-- HUD -->
     <div class="top-hud">
-        <div class="hud-badge">🪱 Vé câu: <span id="ticket-count" style="color: #d82d8b;">10</span></div>
-        <div class="hud-badge">⭐ Điểm: <span id="point-count" style="color: #ffd700;">0</span></div>
+        <div class="hud-badge">⚖️ Tổng Kg: <span id="total-kg" style="color: #4CAF50;">0.0</span> kg</div>
+        <button class="shop-btn" id="openShopBtn">🛒 Cửa Hàng</button>
     </div>
 
-    <!-- UI Reeling Gameplay -->
+    <!-- Reeling UI -->
     <div id="reeling-ui">
         <div class="metric-row">
             <span>Khoảng cách: <span id="dist-text">100</span>m</span>
-            <span id="fish-status" style="color: #4CAF50;">Normal</span>
+            <span id="fish-status" style="color: #4CAF50;">Bình thường</span>
         </div>
-        <div class="bar-container">
-            <div id="distance-bar" class="bar-fill"></div>
-        </div>
+        <div class="bar-container"><div id="distance-bar" class="bar-fill"></div></div>
 
-        <div class="metric-row" style="margin-top: 8px;">
-            <span>Sức căng dây (Tension):</span>
+        <div class="metric-row" style="margin-top: 4px;">
+            <span>Sức căng dây:</span>
             <span id="tension-text">0%</span>
         </div>
-        <div class="bar-container">
-            <div id="tension-bar" class="bar-fill"></div>
-        </div>
+        <div class="bar-container"><div id="tension-bar" class="bar-fill"></div></div>
     </div>
 
-    <!-- Quick Time Event (Giật Cầu) -->
-    <button id="qte-btn">⚡ GIẬT NGAY!</button>
+    <!-- QTE Button -->
+    <button id="qte-btn">⚡ GIẬT CẦN!</button>
 
     <!-- Canvas Engine -->
-    <canvas id="gameCanvas" width="420" height="700"></canvas>
+    <canvas id="gameCanvas" width="420" height="720"></canvas>
 
-    <!-- Main Button -->
+    <!-- Control Button -->
     <div class="controls">
-        <button id="mainBtn" class="btn-main">THẢ CẦN</button>
+        <button id="mainBtn" class="btn-main">CĂN LỰC CÂU</button>
     </div>
 
-    <!-- Modal Result -->
+    <!-- Modal Kết Quả -->
     <div id="resultModal" class="modal">
         <h1 id="res-title" style="color: #ffd700;">BẮT ĐƯỢC CÁ!</h1>
         <div class="fish-card">
-            <h2 id="res-fish-name">Golden Tuna</h2>
-            <p id="res-fish-rarity" style="color: #FF9800; font-weight: bold; margin: 8px 0;">Legendary</p>
-            <h3 id="res-fish-weight">42.8 kg</h3>
+            <h2 id="res-fish-name">Cá Hồi Cam</h2>
+            <p id="res-fish-rarity" style="color: #FF9800; font-weight: bold; margin: 6px 0;">Epic</p>
+            <h3 id="res-fish-weight" style="font-size: 24px; color: #4CAF50;">12.5 kg</h3>
         </div>
-        <p style="margin-bottom: 20px; color: #aaa;">+1 Fishing Ticket | +500 Event Points</p>
         <button id="restartBtn" class="btn-main">CÂU TIẾP</button>
+    </div>
+
+    <!-- Modal Cửa Hàng -->
+    <div id="shopModal" class="modal">
+        <h2 style="color: #FF9800; margin-bottom: 16px;">🛒 CỬA HÀNG MOMO</h2>
+        <div class="shop-item">
+            <div style="text-align: left;">
+                <div style="font-weight: bold;">Voucher Tiki 20k</div>
+                <div style="font-size: 12px; color: #aaa;">Yêu cầu: 15.0 kg cá</div>
+            </div>
+            <button class="shop-btn" onclick="buyItem(15)">Đổi liền</button>
+        </div>
+        <div class="shop-item">
+            <div style="text-align: left;">
+                <div style="font-weight: bold;">Mã Dự Thưởng 1 Triệu</div>
+                <div style="font-size: 12px; color: #aaa;">Yêu cầu: 30.0 kg cá</div>
+            </div>
+            <button class="shop-btn" onclick="buyItem(30)">Đổi liền</button>
+        </div>
+        <button id="closeShopBtn" class="btn-main" style="margin-top: 15px; padding: 10px 30px;">ĐÓNG</button>
     </div>
 </div>
 
@@ -231,249 +223,348 @@
     const distBar = document.getElementById('distance-bar');
     const tensionBar = document.getElementById('tension-bar');
     const flashOverlay = document.getElementById('flash-overlay');
+    const totalKgEl = document.getElementById('total-kg');
 
     // Game States
-    const STATES = { IDLE: 'IDLE', CASTING: 'CASTING', WAITING: 'WAITING', BITE: 'BITE', REELING: 'REELING', RESULT: 'RESULT' };
+    const STATES = { IDLE: 'IDLE', POWER_SELECT: 'POWER_SELECT', CASTING: 'CASTING', BITE: 'BITE', REELING: 'REELING', WIN: 'WIN', LOSE: 'LOSE' };
     let currentState = STATES.IDLE;
 
-    // Spec Variables
+    // Persistent Metrics
+    let totalKg = 0.0;
+
+    // Power Arc Bar Variables
+    let powerAngle = Math.PI; // 180 deg to 0 deg
+    let powerSpeed = 0.04;
+    let powerDir = -1;
+    let selectedBonus = 0; // 0: Normal, 1: Perfect, 2: Accurate
+
+    // Gameplay Tuning (10-15s Balance)
     let distance = 100;
     let tension = 0;
     let isHolding = false;
     let currentFish = null;
     let qteActive = false;
     let qteTimer = null;
-    let fishStateTimer = 0;
-    let fishBehavior = 'Normal'; // Normal, Dash, Struggle, Escape
 
-    // Config độ hiếm cá
+    // Visual Animation Variables
+    let rodJerkOffset = 0;
+    let lineSnapAnim = 0;
+    let fishOrbitAngle = 0;
+    let rippleRadius = 0;
+
+    // Database Cá & Trọng Lượng
     const FISH_DATABASE = [
-        { name: "Cá Rô Đồng", rarity: "Common", color: "#81C784", chance: 0.70, pullPower: 1.0, escapeMult: 1.0, weightMin: 0.5, weightMax: 2.0 },
-        { name: "Cá Hồi Cam", rarity: "Rare", color: "#64B5F6", chance: 0.90, pullPower: 1.5, escapeMult: 1.3, weightMin: 3.0, weightMax: 8.0 },
-        { name: "Cá Ngừ Đại Dương", rarity: "Epic", color: "#BA68C8", chance: 0.98, pullPower: 2.2, escapeMult: 1.8, weightMin: 12.0, weightMax: 25.0 },
-        { name: "Golden Tuna", rarity: "Legendary", color: "#FFD54F", chance: 1.00, pullPower: 3.2, escapeMult: 2.5, weightMin: 35.0, weightMax: 60.0 }
+        { name: "Cá Rô Đồng", rarity: "Thường", color: "#81C784", chance: 0.70, baseKg: 1.5, kgVar: 2.0 },
+        { name: "Cá Chép Vàng", rarity: "Chính Xác", color: "#64B5F6", chance: 0.90, baseKg: 5.0, kgVar: 4.0 },
+        { name: "Cá Hồi Đỏ", rarity: "Hiếm", color: "#BA68C8", chance: 0.98, baseKg: 12.0, kgVar: 6.0 },
+        { name: "Rồng Biển MoMo", rarity: "Huyền thoại", color: "#FFD54F", chance: 1.00, baseKg: 25.0, kgVar: 15.0 }
     ];
 
-    // Trigger hiệu ứng Rung & Flash
     function triggerFeedback(isFlash = false) {
-        if (navigator.vibrate) navigator.vibrate(50);
+        if (navigator.vibrate) navigator.vibrate(40);
         if (isFlash) {
             flashOverlay.style.opacity = '0.8';
-            setTimeout(() => flashOverlay.style.opacity = '0', 120);
+            setTimeout(() => flashOverlay.style.opacity = '0', 100);
         }
     }
 
-    // Input listeners
+    // Input Control
     mainBtn.addEventListener('mousedown', () => handleMainPress(true));
     mainBtn.addEventListener('mouseup', () => handleMainPress(false));
     mainBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleMainPress(true); });
     mainBtn.addEventListener('touchend', (e) => { e.preventDefault(); handleMainPress(false); });
-
-    qteBtn.addEventListener('click', handleQTEClick);
 
     function handleMainPress(pressing) {
         isHolding = pressing;
         if (!pressing) return;
 
         if (currentState === STATES.IDLE) {
+            currentState = STATES.POWER_SELECT;
+            mainBtn.textContent = "CHỌN LỰC!";
+        } else if (currentState === STATES.POWER_SELECT) {
+            // Xác định vùng lực căn được
+            evaluatePowerArc();
             startCastingPhase();
         }
     }
 
-    // 2. Giai đoạn thả cần
+    // Tính toán vùng lực Vòng cung
+    function evaluatePowerArc() {
+        const normalized = (Math.PI - powerAngle) / Math.PI; // 0 to 1
+        if (normalized >= 0.45 && normalized <= 0.55) {
+            selectedBonus = 0.3; // Hoàn hảo (10%)
+            triggerFeedback(true);
+        } else if (normalized >= 0.35 && normalized <= 0.65) {
+            selectedBonus = 0.15; // Chính xác (20%)
+        } else {
+            selectedBonus = 0; // Thường (70%)
+        }
+    }
+
     function startCastingPhase() {
         currentState = STATES.CASTING;
         mainBtn.style.display = 'none';
-        
-        // Timer 1 - 3s chờ cá
-        const waitTime = 1000 + Math.random() * 2000;
+
         setTimeout(() => {
             if (currentState === STATES.CASTING) triggerFishBite();
-        }, waitTime);
+        }, 1500);
     }
 
-    // 3. Cá cắn câu
     function triggerFishBite() {
         currentState = STATES.BITE;
+        rodJerkOffset = 25; // Giật cần animation
         triggerFeedback(true);
 
-        // RNG chọn loại cá
-        const rand = Math.random();
+        // Chọn cá dựa trên điểm Bonus lực
+        const rand = Math.random() - selectedBonus;
         currentFish = FISH_DATABASE.find(f => rand <= f.chance) || FISH_DATABASE[0];
 
-        // 0.5s sau bắt đầu Reeling
         setTimeout(() => {
             startReelingPhase();
-        }, 500);
+        }, 600);
     }
 
-    // 4. Bắt đầu Mini Game kéo cá
     function startReelingPhase() {
         currentState = STATES.REELING;
         distance = 100;
         tension = 0;
         reelingUI.style.display = 'flex';
         mainBtn.style.display = 'block';
-        mainBtn.textContent = "GIỮ ĐỂ THU DÂY";
+        mainBtn.textContent = "GIỮ ĐỂ THU CẦN";
     }
 
-    // Trigger QTE Giật Cụ
+    // Trigger QTE Giật Cần
     function triggerQTE() {
         if (qteActive || currentState !== STATES.REELING) return;
         qteActive = true;
         qteBtn.style.transform = 'translate(-50%, -50%) scale(1)';
 
-        // Window 0.8 giây để bấm
         qteTimer = setTimeout(() => {
             if (qteActive) {
-                // Thất bại QTE
                 qteActive = false;
                 qteBtn.style.transform = 'translate(-50%, -50%) scale(0)';
-                distance += 10;
-                tension += 25;
+                distance += 8;
+                tension += 20;
                 fishStatusEl.textContent = "HỤT GIẬT!";
                 fishStatusEl.style.color = "#F44336";
             }
-        }, 850);
+        }, 900);
     }
 
-    function handleQTEClick() {
+    qteBtn.addEventListener('click', () => {
         if (!qteActive) return;
         clearTimeout(qteTimer);
         qteActive = false;
         qteBtn.style.transform = 'translate(-50%, -50%) scale(0)';
-
-        // Giặt thành công
         triggerFeedback(true);
-        distance = Math.max(0, distance - 5);
-        tension = Math.max(0, tension - 20);
-        fishBehavior = 'Stunned';
+
+        distance = Math.max(0, distance - 8);
+        tension = Math.max(0, tension - 15);
         fishStatusEl.textContent = "CÁ BỊ CHOÁNG!";
         fishStatusEl.style.color = "#FFEB3B";
-    }
+    });
 
-    // 5-9. Loop Cập nhật chỉ số
+    // Loop logic chính
     function update() {
-        if (currentState === STATES.REELING) {
-            // Cập nhật hành vi cá ngẫu nhiên mỗi 1.5s
-            fishStateTimer += 0.016;
-            if (fishStateTimer > 1.5) {
-                fishStateTimer = 0;
-                const behaviors = ['Normal', 'Dash', 'Escape', 'Struggle'];
-                fishBehavior = behaviors[Math.floor(Math.random() * behaviors.length)];
-                
-                if (fishBehavior === 'Struggle' || (currentFish.rarity === 'Legendary' && Math.random() < 0.5)) {
-                    triggerQTE();
-                }
-            }
-
-            // Xử lý thu dây
+        if (currentState === STATES.POWER_SELECT) {
+            powerAngle += powerSpeed * powerDir;
+            if (powerAngle <= 0 || powerAngle >= Math.PI) powerDir *= -1;
+        }
+        else if (currentState === STATES.REELING) {
+            // Cân bằng gameplay: Thu dây trong 10-15 giây
             if (isHolding) {
-                distance -= 0.12; // Thu dây
-                tension += 0.35 * currentFish.pullPower;
+                distance -= 0.28; // Tốc độ thu cần đã được tối ưu
+                tension += 0.32;
             } else {
-                tension -= 0.5; // Giảm căng khi thả
+                tension -= 0.6; // Giảm căng khi nhả
             }
 
-            // Xử lý hành vi cá tác động
-            if (fishBehavior === 'Dash') {
-                tension += 0.25;
-                fishStatusEl.textContent = "LAO MẠNH!";
-                fishStatusEl.style.color = "#FF9800";
-            } else if (fishBehavior === 'Escape') {
-                distance += 0.08 * currentFish.escapeMult;
-                fishStatusEl.textContent = "BỎ CHẠY!";
-                fishStatusEl.style.color = "#F44336";
-            } else if (fishBehavior === 'Normal') {
-                fishStatusEl.textContent = "BÌNH THƯỜNG";
-                fishStatusEl.style.color = "#4CAF50";
+            // Cá ngẫu nhiên vùng vẫy
+            if (Math.random() < 0.02 && !qteActive) {
+                triggerQTE();
             }
 
-            // Clamp chỉ số
+            // Boundary
             distance = Math.max(0, distance);
             tension = Math.max(0, Math.min(100, tension));
 
             // Cập nhật UI
             distText.textContent = Math.ceil(distance);
             tensionText.textContent = `${Math.ceil(tension)}%`;
-            distBar.style.width = `${(distance / 120) * 100}%`;
+            distBar.style.width = `${(distance / 100) * 100}%`;
             tensionBar.style.width = `${tension}%`;
 
-            // 10 & 12. Điều kiện Thắng / Thua
-            if (distance <= 0) {
-                finishGame(true);
-            } else if (tension >= 100 || distance > 120) {
-                finishGame(false);
-            }
+            // Thắng / Thua
+            if (distance <= 0) finishGame(true);
+            else if (tension >= 100) finishGame(false);
         }
+
+        // Decay Animations
+        if (rodJerkOffset > 0) rodJerkOffset *= 0.85;
     }
 
     function finishGame(isSuccess) {
-        currentState = STATES.RESULT;
         reelingUI.style.display = 'none';
         mainBtn.style.display = 'none';
         qteBtn.style.transform = 'translate(-50%, -50%) scale(0)';
 
-        const modal = document.getElementById('resultModal');
-        modal.style.display = 'flex';
-
         if (isSuccess) {
+            currentState = STATES.WIN;
             triggerFeedback(true);
-            const weight = (currentFish.weightMin + Math.random() * (currentFish.weightMax - currentFish.weightMin)).toFixed(1);
+
+            // Tính số Kg dựa trên độ hiếm
+            const caughtKg = parseFloat((currentFish.baseKg + Math.random() * currentFish.kgVar).toFixed(1));
+            totalKg += caughtKg;
+            totalKgEl.textContent = totalKg.toFixed(1);
+
             document.getElementById('res-title').textContent = "BẮT ĐƯỢC CÁ!";
             document.getElementById('res-title').style.color = "#ffd700";
             document.getElementById('res-fish-name').textContent = currentFish.name;
             document.getElementById('res-fish-rarity').textContent = currentFish.rarity;
             document.getElementById('res-fish-rarity').style.color = currentFish.color;
-            document.getElementById('res-fish-weight').textContent = `${weight} kg`;
+            document.getElementById('res-fish-weight').textContent = `+${caughtKg} kg`;
         } else {
-            document.getElementById('res-title').textContent = "CÁ ĐÃ THOÁT!";
+            currentState = STATES.LOSE;
+            lineSnapAnim = 100; // Trigger hiệu ứng đứt dây
+            document.getElementById('res-title').textContent = "ĐỨT DÂY CÂU!";
             document.getElementById('res-title').style.color = "#F44336";
-            document.getElementById('res-fish-name').textContent = "ĐỨT DÂY CÂU";
+            document.getElementById('res-fish-name').textContent = "Cá đã trốn mất";
             document.getElementById('res-fish-rarity').textContent = "Thất bại";
             document.getElementById('res-fish-weight').textContent = "0 kg";
         }
+
+        setTimeout(() => {
+            document.getElementById('resultModal').style.display = 'flex';
+        }, 800);
     }
 
-    document.getElementById('restartBtn').addEventListener('click', () => {
-        document.getElementById('resultModal').style.display = 'none';
-        currentState = STATES.IDLE;
-        mainBtn.style.display = 'block';
-        mainBtn.textContent = "THẢ CẦN";
-    });
-
-    // Render Canvas
+    // -------------------------------------------------------------
+    // CANVAS GRAPHICS & RENDER ENGINE
+    // -------------------------------------------------------------
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Mặt nước
-        ctx.fillStyle = "#1e3c72";
+        // 1. Render Mặt Hồ Nước & Gợn Sóng
+        ctx.fillStyle = "#112233";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Hiệu ứng phao câu
-        if (currentState === STATES.CASTING || currentState === STATES.BITE) {
-            ctx.fillStyle = currentState === STATES.BITE ? "#FF1744" : "#FF9800";
+        // Vẽ các vòng gợn sóng nước
+        rippleRadius = (rippleRadius + 0.3) % 40;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, 350, rippleRadius + 20, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 2. Render Cá Bơi Vòng Quay khi Reeling
+        if (currentState === STATES.REELING) {
+            fishOrbitAngle += 0.05;
+            const orbitX = canvas.width / 2 + Math.cos(fishOrbitAngle) * (distance * 1.2);
+            const orbitY = 350 + Math.sin(fishOrbitAngle) * (distance * 0.6);
+
+            // Bóng cá dưới nước
+            ctx.fillStyle = currentFish ? currentFish.color : "rgba(0,0,0,0.5)";
             ctx.beginPath();
-            ctx.arc(canvas.width / 2, 350, currentState === STATES.BITE ? 14 : 10, 0, Math.PI * 2);
+            ctx.ellipse(orbitX, orbitY, 14, 6, fishOrbitAngle, 0, Math.PI * 2);
             ctx.fill();
 
-            if (currentState === STATES.BITE) {
-                ctx.fillStyle = "#FFF";
-                ctx.font = "bold 30px sans-serif";
-                ctx.fillText("!", canvas.width / 2 - 5, 320);
-            }
+            // Dây câu kết nối với cá
+            ctx.strokeStyle = tension > 70 ? "#F44336" : "rgba(255,255,255,0.6)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 600 - rodJerkOffset);
+            ctx.lineTo(orbitX, orbitY);
+            ctx.stroke();
+        }
+
+        // 3. Render Thanh Lực Vòng Cung (Power Arc Bar)
+        if (currentState === STATES.POWER_SELECT) {
+            const centerX = canvas.width / 2;
+            const centerY = 500;
+            const radius = 90;
+
+            // Vùng Thường 70%
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
+            ctx.lineWidth = 18; ctx.strokeStyle = "#4CAF50"; ctx.stroke();
+
+            // Vùng Chính Xác 20%
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI * 0.65, Math.PI * 0.35, true);
+            ctx.lineWidth = 18; ctx.strokeStyle = "#2196F3"; ctx.stroke();
+
+            // Vùng Hoàn Hảo 10%
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI * 0.55, Math.PI * 0.45, true);
+            ctx.lineWidth = 18; ctx.strokeStyle = "#FFD700"; ctx.stroke();
+
+            // Kim chỉ lực
+            const ptrX = centerX + Math.cos(powerAngle) * radius;
+            const ptrY = centerY - Math.sin(powerAngle) * radius;
+            ctx.fillStyle = "#FFF"; ctx.beginPath();
+            ctx.arc(ptrX, ptrY, 12, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // 4. Render Cần Cầu & Animation
+        const rodBaseX = canvas.width / 2;
+        const rodBaseY = canvas.height + 20;
+        const rodTipX = canvas.width / 2;
+        const rodTipY = 580 - rodJerkOffset;
+
+        ctx.strokeStyle = "#8D6E63";
+        ctx.lineWidth = 8; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(rodBaseX, rodBaseY);
+        ctx.lineTo(rodTipX, rodTipY);
+        ctx.stroke();
+
+        // 5. Render Hiệu Ứng Đứt Dây
+        if (lineSnapAnim > 0) {
+            lineSnapAnim -= 2;
+            ctx.strokeStyle = "#F44336";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(rodTipX, rodTipY);
+            ctx.lineTo(rodTipX - 30, rodTipY - 60);
+            ctx.moveTo(rodTipX, rodTipY);
+            ctx.lineTo(rodTipX + 40, rodTipY - 40);
+            ctx.stroke();
         }
 
         requestAnimationFrame(draw);
     }
 
-    function gameLoop() {
-        update();
-        draw();
-        requestAnimationFrame(gameLoop);
+    // Modal Events
+    document.getElementById('restartBtn').addEventListener('click', () => {
+        document.getElementById('resultModal').style.display = 'none';
+        currentState = STATES.IDLE;
+        mainBtn.style.display = 'block';
+        mainBtn.textContent = "CĂN LỰC CÂU";
+    });
+
+    document.getElementById('openShopBtn').addEventListener('click', () => {
+        document.getElementById('shopModal').style.display = 'flex';
+    });
+    document.getElementById('closeShopBtn').addEventListener('click', () => {
+        document.getElementById('shopModal').style.display = 'none';
+    });
+
+    function buyItem(requiredKg) {
+        if (totalKg >= requiredKg) {
+            totalKg -= requiredKg;
+            totalKgEl.textContent = totalKg.toFixed(1);
+            alert("Đổi quà thành công! Mã Voucher đã gửi vào Ví MoMo.");
+        } else {
+            alert("Bạn chưa đủ số Kg cá để đổi quà này!");
+        }
     }
 
-    gameLoop();
+    // Game Loop Init
+    function loop() {
+        update();
+        draw();
+    }
+    loop();
 </script>
 </body>
 </html>
